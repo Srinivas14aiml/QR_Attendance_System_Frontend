@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 
 const ENV_API_BASE = process.env.REACT_APP_API_BASE?.trim();
-const DEPLOYED_API_BASE = 'https://qr-attendance-system-l93g.onrender.com';
-const DEFAULT_API_BASE = ENV_API_BASE || DEPLOYED_API_BASE;
+const LOCAL_API_BASE = 'http://localhost:8080';
+const LEGACY_API_BASES = ['https://qr-attendance-system-l93g.onrender.com'];
+const DEFAULT_API_BASE = ENV_API_BASE || LOCAL_API_BASE;
 const TOKEN_KEY = 'attendance-token';
 const USER_KEY = 'attendance-user';
 const API_BASE_KEY = 'attendance-api-base';
@@ -38,14 +39,15 @@ function readStorage(key, fallback) {
 
 function resolveInitialApiBase() {
   const storedValue = readStorage(API_BASE_KEY, '');
+  const isLegacyApiBase = LEGACY_API_BASES.includes(storedValue);
 
   if (ENV_API_BASE) {
-    if (!storedValue || storedValue.includes('localhost') || storedValue.includes('127.0.0.1')) {
+    if (!storedValue || isLegacyApiBase || storedValue.includes('localhost') || storedValue.includes('127.0.0.1')) {
       return ENV_API_BASE;
     }
   }
 
-  if (!storedValue || storedValue.includes('localhost') || storedValue.includes('127.0.0.1')) {
+  if (!storedValue || isLegacyApiBase || storedValue.includes('localhost') || storedValue.includes('127.0.0.1')) {
     return DEFAULT_API_BASE;
   }
 
@@ -341,40 +343,21 @@ function TeacherDashboard({ apiBase, token, currentUser, onLogout }) {
     ));
   }, []);
 
-  useEffect(() => {
-    loadSessions();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!selectedSessionId) {
-      return;
-    }
-
-    loadSessionAttendance(selectedSessionId);
-    const interval = window.setInterval(() => {
-      loadSessionAttendance(selectedSessionId, { silent: true });
-    }, 5000);
-
-    return () => window.clearInterval(interval);
-  }, [selectedSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
     setLoading((current) => ({ ...current, sessions: true }));
     try {
       const response = await apiRequest('/api/sessions', { apiBase, token });
       setSessions(response);
-      if (!selectedSessionId && response.length > 0) {
-        setSelectedSessionId(String(response[0].id));
-      }
+      setSelectedSessionId((current) => (current || response.length === 0 ? current : String(response[0].id)));
     } catch (error) {
       setActionMessage(error.message);
       setActionTone('error');
     } finally {
       setLoading((current) => ({ ...current, sessions: false }));
     }
-  }
+  }, [apiBase, token]);
 
-  async function loadSessionAttendance(sessionId, options = {}) {
+  const loadSessionAttendance = useCallback(async (sessionId, options = {}) => {
     setLoading((current) => ({ ...current, detail: !options.silent }));
     try {
       const response = await apiRequest(`/api/session-attendance/${sessionId}`, { apiBase, token });
@@ -399,7 +382,24 @@ function TeacherDashboard({ apiBase, token, currentUser, onLogout }) {
     } finally {
       setLoading((current) => ({ ...current, detail: false }));
     }
-  }
+  }, [apiBase, token]);
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
+
+  useEffect(() => {
+    if (!selectedSessionId) {
+      return;
+    }
+
+    loadSessionAttendance(selectedSessionId);
+    const interval = window.setInterval(() => {
+      loadSessionAttendance(selectedSessionId, { silent: true });
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [loadSessionAttendance, selectedSessionId]);
 
   async function handleCreateSession(event) {
     event.preventDefault();
