@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 
 const ENV_API_BASE = process.env.REACT_APP_API_BASE?.trim();
-const LOCAL_API_BASE = 'http://localhost:8080';
+const LOCAL_API_BASE = 'https://qr-attendance-backend-x35f.onrender.com';
 const LEGACY_API_BASES = ['https://qr-attendance-system-l93g.onrender.com'];
 const DEFAULT_API_BASE = ENV_API_BASE || LOCAL_API_BASE;
 const TOKEN_KEY = 'attendance-token';
