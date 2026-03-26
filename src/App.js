@@ -615,7 +615,9 @@ function TeacherDashboard({ apiBase, token, currentUser, onLogout }) {
                 <img src={`data:image/png;base64,${qrData.qrBase64}`} alt="Attendance QR" className="qr-image" />
                 <div className="link-box">
                   <span>Student page</span>
-                  <code>{qrData.attendanceUrl}</code>
+                  <code>{qrData.attendanceUrl}</code>    
+                   console.log(qrData)
+              
                 </div>
                 <p className="muted-text">QR expires at {formatDateTime(qrData.expiresAt)}</p>
               </div>
