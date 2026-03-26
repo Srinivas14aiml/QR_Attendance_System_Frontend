@@ -80,7 +80,7 @@ async function apiRequest(path, { apiBase, token, method = 'GET', body } = {}) {
   let response;
 
   try {
-    response = await fetch(`${apiBase}${path}`, {
+    response = await fetch(`${apiBase.replace(/\/$/, '')}${path}`, {
       method,
       headers: {
         ...(body ? { 'Content-Type': 'application/json' } : {}),
