@@ -616,7 +616,7 @@ function TeacherDashboard({ apiBase, token, currentUser, onLogout }) {
                 <div className="link-box">
                   <span>Student page</span>
                   <code>{qrData.attendanceUrl}</code>    
-                   console.log(qrData)
+                   {qrData}
               
                 </div>
                 <p className="muted-text">QR expires at {formatDateTime(qrData.expiresAt)}</p>
